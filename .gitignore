@@ -20,3 +20,4 @@ spark-jobs/output/
 data-generator/venv/
 data-generator/dump/
 
+nginx/
