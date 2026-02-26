@@ -1,0 +1,100 @@
+services:
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: transport
+    networks:
+      - transport-net
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    environment:
+      CASSANDRA_CLUSTER_NAME: TransportCluster
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    networks:
+      - transport-net
+
+  spark-master:
+    image: spark:3.5.0
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    volumes:
+      - ./spark-jobs:/opt/spark-jobs
+    networks:
+      - transport-net
+
+  spark-worker:
+    image: spark:3.5.0
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on:
+      - spark-master
+    networks:
+      - transport-net
+
+  spark-submit:
+    image: spark:3.5.0
+    container_name: spark-submit
+    depends_on:
+      - spark-master
+      - spark-worker
+    volumes:
+      - ./spark-jobs:/opt/spark-jobs
+    command: >
+      /opt/spark/bin/spark-submit
+      --master spark://spark-master:7077
+      --conf spark.jars.ivy=/tmp/.ivy2
+      --packages org.mongodb.spark:mongo-spark-connector_2.12:10.3.0
+      /opt/spark-jobs/analytics.py
+    networks:
+      - transport-net
+
+  api:
+    build: ./api
+    container_name: fastapi
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongodb
+      - cassandra
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017
+      - SPARK_OUTPUT=/spark-output
+    volumes:
+      - ./spark-jobs/output:/spark-output
+    networks:
+      - transport-net
+
+networks:
+  transport-net:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  cassandra_data:

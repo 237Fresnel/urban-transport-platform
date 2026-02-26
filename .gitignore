@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+*.bson
+dump/
+
+# Node
+frontend/node_modules/
+frontend/build/
+
+# Spark
+spark-jobs/output/
+
+# Docker
+*.log
+
+# Data
+data-generator/venv/
+data-generator/dump/
+
