@@ -110,13 +110,6 @@ docker exec spark-master /opt/spark/bin/spark-submit \
 | API | Render.com |
 | Frontend | Vercel |
 
-Les variables d'environnement à configurer :
-
-```env
-MONGO_ATLAS_URL=mongodb+srv://user:password@cluster.mongodb.net/transport
-REACT_APP_API_URL=https://ton-api.onrender.com
-```
-
 ---
 
 ## Arrêter le projet
@@ -125,8 +118,4 @@ REACT_APP_API_URL=https://ton-api.onrender.com
 docker compose down
 ```
 
----
 
-## Auteur
-
-Projet pédagogique — Big Data & Systèmes Distribués
